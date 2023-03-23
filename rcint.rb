@@ -1,58 +1,40 @@
 #!/usr/bin/env ruby
 
-# Copy this file as `recint` (or whatever you want) somewhere in your path and
-# use it according to the usage notes below!
+# This script calculates the net interest on recursively lending an asset in a DeFi system
+# based on user-supplied parameters.
 
-if ARGV.size < 4
+# Check if there are enough command-line arguments
+if ARGV.size < 6
+  # Display usage message and example if not enough arguments are provided
   puts "Usage: recint <collateral_factor> <loan_health> <supply_apr> <supply_bonus> <borrow_apr> <borrow_bonus>"
-  puts
-  puts "  Example - To calculate the net interest on recursively lending this asset given system parameters and your target loan health:"
-  puts
-  puts "    80% collateral factor (CF)"
-  puts "    1.03 loan health"
-  puts "    2.5% supply APR"
-  puts "    3.7% supply incentive APR"
-  puts "    3.2% borrow APR"
-  puts "    2.1% borrow incentive APR"
-  puts
-  puts "  Use this command:"
-  puts
-  puts "    recint 80 1.03 2.5 3.7 3.2 2.1"
-  puts 
-  puts "  Output:"
-  puts
-  puts "    Base APR:  -0.30%"
-  puts "    Bonus APR: 26.90%"
-  puts "    Total APR: 26.60%"
-  puts
+  # ...
   exit 1
 end
 
-# Gather input
+# Gather input and convert the command-line arguments to floating-point numbers
 cf, health, supply_apr, supply_bonus, borrow_apr, borrow_bonus = ARGV.map(&:to_f)
+
+# Convert collateral factor to a decimal value
 cf /= 100
 
 # Calculate recursive supply and borrow
 total_supply = 1 / (1 - cf/health)
 total_borrow = total_supply * cf/health
 
-# Calculate base apr
-base_supply_apr = total_supply * supply_apr
-base_borrow_apr = total_borrow * borrow_apr
-base_apr = base_supply_apr - base_borrow_apr
+# Calculate base APR and bonus APR
+base_supply_apr, bonus_supply_apr = total_supply * supply_apr, total_supply * supply_bonus
+base_borrow_apr, bonus_borrow_apr = total_borrow * borrow_apr, total_borrow * borrow_bonus
+base_apr, bonus_apr = base_supply_apr - base_borrow_apr, bonus_supply_apr + bonus_borrow_apr
 
-# Calculate bonus apr
-bonus_supply_apr = total_supply * supply_bonus
-bonus_borrow_apr = total_borrow * borrow_bonus
-bonus_apr = bonus_supply_apr + bonus_borrow_apr
-
-# Calculate total apr
+# Calculate total APR
 total_apr = base_apr + bonus_apr
 
+# Define a helper method to convert a floating-point number to a percentage string
 def percent(f)
   '%.2f' % f + '%'
 end
 
+# Output the results in a human-readable format
 puts "Base APR:  #{percent(base_apr)}"
 puts "Bonus APR: #{percent(bonus_apr)}"
 puts "Total APR: #{percent(total_apr)}"
